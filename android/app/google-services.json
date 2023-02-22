@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "78970215617",
+    "project_id": "chatbot-2q",
+    "storage_bucket": "chatbot-2q.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:78970215617:android:b850090476abc5c4478840",
+        "android_client_info": {
+          "package_name": "com.example.chatbot"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "78970215617-easc84onkqhc55ap2cptmac45vce45tj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCLPMGO8NEW25-ypLigGe5pz3NIWeUbTLA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "78970215617-easc84onkqhc55ap2cptmac45vce45tj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
