@@ -2,12 +2,16 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:avatar_glow/avatar_glow.dart';
+import 'package:chatbot/ThreeDots.dart';
 import 'package:chatbot/api_services.dart';
 import 'package:chatbot/chatdata/handle.dart';
 import 'package:chatbot/screen/setting_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:speech_to_text/speech_to_text.dart';
+import 'package:text_to_speech/text_to_speech.dart';
 
 class Chat extends StatefulWidget {
   final String title;
@@ -26,6 +30,18 @@ class _ChatState extends State<Chat> {
 
   bool backButtonPressedCount = false;
   bool checkSetState = true;
+
+  late SpeechToText _speechToText;
+  TextToSpeech _textToSpeech = TextToSpeech();
+  bool _isListening = false;
+  String? _textSpeech;
+  bool _checkPop = false;
+
+  void initState() {
+    super.initState();
+    _speechToText = SpeechToText();
+    _textToSpeech.setLanguage('vi-VN');
+  }
 
   // Future<bool> _onWillPop() async {
   //   return (await showDialog(
@@ -51,13 +67,6 @@ class _ChatState extends State<Chat> {
   Future<bool> _onWillPop() async {
     if (backButtonPressedCount == true) {
       exit(0);
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(
-      //       content: Text("Hi"),
-      //     behavior: SnackBarBehavior.floating,
-      //   ),
-      // );
-      return false;
     } else {
       // Nếu đây là lần đầu tiên người dùng bấm nút quay trở lại,
       // họ sẽ được thông báo rằng họ cần bấm nút quay trở lại lần nữa để thoát ứng dụng.
@@ -68,11 +77,10 @@ class _ChatState extends State<Chat> {
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.CENTER,
         timeInSecForIosWeb: 1,
-        backgroundColor: Color.fromRGBO(1, 1, 1, 0.7),
+        backgroundColor: const Color.fromRGBO(1, 1, 1, 0.7),
         textColor: Colors.white,
         fontSize: 16.0,
       );
-
       Timer(const Duration(seconds: 2), () => backButtonPressedCount = false);
       return false;
     }
@@ -80,16 +88,84 @@ class _ChatState extends State<Chat> {
 
   Future<void> waitData() async {
     List<ChatMessage> _messages2 = await _handle.readData(widget.user_id);
-    _messages.addAll(_messages2);
-    setState(() {
+    await Future.delayed(const Duration(seconds: 1), () {
+      _messages.addAll(_messages2);
     });
+    setState(() {
+      checkSetState = false;
+    });
+  }
+
+
+  _showDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => GestureDetector(
+        onTap: () {
+          _textEditingController.text = _textSpeech!;
+          setState(() {
+            _checkPop = true;
+            _isListening = false;
+            _speechToText.stop();
+          });
+        },
+        child: WillPopScope(
+          onWillPop: () async {
+            _textEditingController.text = _textSpeech!;
+            setState(() {
+              _checkPop = true;
+              _isListening = false;
+              _speechToText.stop();
+            });
+            return true;
+          },
+          child: AlertDialog(
+            title: const Text(
+              'Hãy nói gì đó',
+              textAlign: TextAlign.center,
+            ),
+            content: AvatarGlow(
+              glowColor: Colors.blue,
+              endRadius: 90.0,
+              duration: const Duration(milliseconds: 2000),
+              repeat: true,
+              showTwoGlows: true,
+              repeatPauseDuration: const Duration(milliseconds: 100),
+              child: Material(     // Replace this child with your own
+                elevation: 8.0,
+                shape: const CircleBorder(),
+                child: CircleAvatar(
+                  child: Container(
+                    width: 500,
+                    height: 500,
+                    child: IconButton(
+                      icon: const Icon(Icons.mic),
+                      color: Theme.of(context).colorScheme.secondary,
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _textEditingController.text = _textSpeech!;
+                        setState(() {
+                          _checkPop = true;
+                          _isListening = false;
+                          _speechToText.stop();
+                        });
+                      },
+                    ),
+                  ),
+                  radius: 40.0,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     if(checkSetState) {
       waitData();
-      checkSetState = false;
     }
 
     return WillPopScope(
@@ -124,16 +200,30 @@ class _ChatState extends State<Chat> {
             )
           ],
         ),
-        body: Column(
+        body: Stack(
           children: [
-            Flexible(
-                child: ListView.builder(
-              padding: const EdgeInsets.all(8),
-              reverse: true,
-              itemBuilder: (_, int index) => _messages[index],
-              itemCount: _messages.length,
-            )),
-            _buildTextComposer()
+            checkSetState
+                ? const Expanded(
+                  child: Center(
+                    child: CircularProgressIndicator(),
+            ),
+                )
+                : const Center(
+              child: null,
+            ),
+            Column(
+              children: [
+                Flexible(
+                    child: ListView.builder(
+                  padding: const EdgeInsets.all(8),
+                  reverse: true,
+                  itemBuilder: (_, int index) => _messages[index],
+                  itemCount: _messages.length,
+                )),
+                if (_messages.isEmpty != true && _messages.first.isUser == true) const ThreeDots(),
+                _buildTextComposer()
+              ],
+            ),
           ],
         ),
       ),
@@ -150,9 +240,47 @@ class _ChatState extends State<Chat> {
           ),
           margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 10, 0),
+            padding: const EdgeInsets.fromLTRB(5, 0, 10, 0),
             child: Row(
               children: [
+                Container(
+                  margin: const EdgeInsets.only(right: 4),
+                  child: IconButton(
+                    icon: const Icon(Icons.mic_none),
+                    onPressed: () async {
+                      _showDialog(context);
+                      if (!_isListening) {
+                        bool available = await _speechToText.initialize(
+                          onStatus: (result) {
+                            print('onStatus: $result');
+                            if (result == 'notListening' && _checkPop == false) {
+                              Navigator.of(context).pop();
+                              print("poppop");
+                              _textEditingController.text = _textSpeech!;
+                              setState(() {
+                                _isListening = false;
+                                _speechToText.stop();
+                              });
+                            }
+                          },
+                          onError: (result) => print('onError: $result'),
+                        );
+                        if (available) {
+                          setState(() {
+                            _checkPop = false;
+                            _isListening = true;
+                          });
+                          _speechToText.listen(
+                              listenMode: ListenMode.confirmation,
+                              onResult: (result) => setState(() {
+                                _textSpeech = result.recognizedWords;
+                              })
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ),
                 Flexible(
                     child: TextField(
                       style: const TextStyle(fontSize: 18),
@@ -166,26 +294,13 @@ class _ChatState extends State<Chat> {
                   child: IconButton(
                     icon: const Icon(Icons.send),
                     onPressed: () {
-                      try {
-                        // Code có thể gây ra lỗi liên quan đến nền tảng
-                        // Ví dụ: kết nối mạng, lỗi xử lý hình ảnh, v.v.
-                      } on PlatformException catch (e) {
-                        // Xử lý lỗi
-                        if (e.code == 'network_error') {
-                          // Hiển thị thông báo cho người dùng
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Không có kết nối mạng.'),
-                            ),
-                          );
-                        }
-                      }
                       if(_textEditingController.text != "") {
                          _handleSubmitted(_textEditingController.text);
+                         _textSpeech = '';
                       }
                     }
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -217,6 +332,7 @@ class _ChatState extends State<Chat> {
 
     setState(() {
       _messages.insert(0, reply);
+      _textToSpeech.speak(reply.text);
       _handle.addData(widget.user_id, chatMessage.text, reply.text);
     });
   }

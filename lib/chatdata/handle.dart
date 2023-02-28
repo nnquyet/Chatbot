@@ -2,7 +2,6 @@ import 'package:intl/intl.dart';
 
 import 'package:chatbot/screen/chat_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 
 class Handle {
   int countWrite = 1;
@@ -34,39 +33,40 @@ class Handle {
   Future<List<ChatMessage>> readData(String user_id) async {
     DocumentReference datas = FirebaseFirestore.instance.collection('data').doc(user_id);
 
-    List<ChatMessage> chatMessage0 = [];
+    List<ChatMessage> chatMessageReturn = [];
 
     final snapshot = await datas.get();
     if (snapshot.exists) {
       final data = snapshot.data();
       countRead = (data as Map)['count'] + 1;
       if (countRead == 11) countRead = 1;
-      while ((data as Map)['${countRead}user'] != null && _list.isNotEmpty) {
-        print('user: ${(data as Map)['${countRead}user']}');
-        print('bot: ${(data as Map)['${countRead}bot']}');
+      while (_list.isNotEmpty) {
+        // print('user: ${(data as Map)['${countRead}user']}');
+        // print('bot: ${(data as Map)['${countRead}bot']}');
 
         ChatMessage chatMessage = ChatMessage(
           text: (data as Map)['${countRead}user'],
           isUser: true,
         );
-
-        chatMessage0.insert(0, chatMessage);
-
+        
         ChatMessage chatMessageBot = ChatMessage(
           text: (data as Map)['${countRead}bot'],
           isUser: false,
         );
-
-        chatMessage0.insert(0, chatMessageBot);
+        
+        if(chatMessage.text != null) {
+          chatMessageReturn.insert(0, chatMessage);
+          chatMessageReturn.insert(0, chatMessageBot);
+        }
 
         countRead++;
         if (countRead == 11) countRead = 1;
         _list.remove(countRead);
-        print(_list);
+        // print(_list);
       }
     }
 
-    return chatMessage0;
+    return chatMessageReturn;
   }
 
   String handleUserInput(String user_input) {
