@@ -1,3 +1,4 @@
+import 'package:chatbot/screen/conversation_screen.dart';
 import 'package:chatbot/screen/sign_up_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -36,16 +37,21 @@ class _LoginState extends State<Login> {
     try {
       final UserCredential userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: email, password: password);
-      String? user_id = Auth().firebaseAuth.currentUser?.uid;
+      String user_id = Auth().firebaseAuth.currentUser?.uid ?? 'abc';
 
       // Chuyển hướng sang màn hình Chat_Screen
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(
+      //       builder: (context) => Chat(
+      //         title: 'Chatbot Mimi',
+      //         user_id: user_id ?? '',
+      //       )),
+      // );
       Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => Chat(
-              title: 'Chatbot Mimi',
-              user_id: user_id ?? '',
-            )),
+            builder: (context) => Conversation(user_id: user_id,)),
       );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {

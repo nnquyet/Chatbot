@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:avatar_glow/avatar_glow.dart';
-import 'package:chatbot/ThreeDots.dart';
+import 'package:chatbot/animation/ThreeDots.dart';
 import 'package:chatbot/api_services.dart';
 import 'package:chatbot/chatdata/handle.dart';
 import 'package:chatbot/screen/setting_screen.dart';
@@ -87,7 +87,7 @@ class _ChatState extends State<Chat> {
   }
 
   Future<void> waitData() async {
-    List<ChatMessage> _messages2 = await _handle.readData(widget.user_id);
+    List<ChatMessage> _messages2 = await _handle.readData(widget.user_id, 'waitData');
     await Future.delayed(const Duration(seconds: 1), () {
       _messages.addAll(_messages2);
     });
@@ -333,7 +333,7 @@ class _ChatState extends State<Chat> {
     setState(() {
       _messages.insert(0, reply);
       _textToSpeech.speak(reply.text);
-      _handle.addData(widget.user_id, chatMessage.text, reply.text);
+      _handle.addData(widget.user_id, 'waitData', chatMessage.text, reply.text);
     });
   }
 }

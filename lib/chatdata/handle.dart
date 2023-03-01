@@ -8,8 +8,8 @@ class Handle {
   int countRead = 1;
   List<int> _list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-  Future<void> addData(String user_id, String user_chat, String bot_chat) async {
-    DocumentReference datas = FirebaseFirestore.instance.collection('data').doc(user_id);
+  Future<void> addData(String user_id, String section, String user_chat, String bot_chat) async {
+    DocumentReference datas = FirebaseFirestore.instance.collection(user_id).doc(section);
     final dataSnapshot = await datas.get();
     final data = dataSnapshot.data();
     countWrite = dataSnapshot.exists? (data as Map)['count'] + 1 : 1;
@@ -30,8 +30,8 @@ class Handle {
     }
   }
 
-  Future<List<ChatMessage>> readData(String user_id) async {
-    DocumentReference datas = FirebaseFirestore.instance.collection('data').doc(user_id);
+  Future<List<ChatMessage>> readData(String user_id, String section) async {
+    DocumentReference datas = FirebaseFirestore.instance.collection(user_id).doc(section);
 
     List<ChatMessage> chatMessageReturn = [];
 
